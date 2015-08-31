@@ -1,0 +1,20 @@
+{
+  "name": "i7grendel/youhosting2",
+  "description": "Module to connect with YouHosting's REST API and web interface.",
+  "minimum-stability": "stable",
+  "license": "LGPL-v3",
+  "authors": [
+    {
+      "name": "Hans",
+      "email": "hans@grendelhosting.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "YouHosting\\": "src/"
+    }
+  },
+  "require": {
+    "guzzlehttp/guzzle": "5.3.x"
+  }
+}
