@@ -19,7 +19,7 @@ use GuzzleHttp\Message\ResponseInterface;
 class WebApi
 {
     protected $options = array(
-        'base_url' => 'http://www.youhosting.com',
+        'web_url' => 'http://www.youhosting.com',
         'cookie_type' => 'array',
     );
 
@@ -45,7 +45,13 @@ class WebApi
         $this->options = array_replace_recursive($this->options, $options);
         $this->setCookieJar();
         $this->webclient = new \GuzzleHttp\Client(array(
-            'base_url' => $this->options['base_url'],
+            'base_url' => $this->options['web_url'],
+            'defaults' => array(
+                'cookies' => $this->cookiejar,
+                'allow_redirects' => false,
+                'connect_timeout' => 20,
+                'timeout' => 30,
+            ),
         ));
         $this->username = $username;
         $this->password = $password;
@@ -127,8 +133,6 @@ class WebApi
                 'password' => $this->password,
                 $name => $value,
             ),
-            'cookies' => $this->cookiejar,
-            'allow_redirects' => false,
         ));
 
         if($response->getStatusCode() == 200){
@@ -148,10 +152,25 @@ class WebApi
     {
         $request = $this->webclient->createRequest('POST', $url, array(
             'body' => $data,
-            'cookies' => $this->cookiejar,
-            'allow_redirects' => false,
         ));
+        return $this->sendRequest($request);
+    }
 
+
+    /**
+     * Send a GET request to youhosting.com
+     *
+     * @param string $url the relative url
+     * @param array $data any data which will be passed as query string
+     * @return Response
+     * @throws YouHostingException
+     */
+    protected function get($url, $data = array())
+    {
+        if(!empty($data)){
+            $url = $url . "?" . http_build_query($data);
+        }
+        $request = $this->webclient->createRequest('GET', $url);
         return $this->sendRequest($request);
     }
 
@@ -175,28 +194,6 @@ class WebApi
         }
 
         return $response;
-    }
-
-    /**
-     * Send a GET request to youhosting.com
-     *
-     * @param string $url the relative url
-     * @param array $data any data which will be passed as query string
-     * @return Response
-     * @throws YouHostingException
-     */
-    protected function get($url, $data = array())
-    {
-        if(!empty($data)){
-            $url .= http_build_query($data);
-        }
-
-        $request = $this->webclient->createRequest('GET', $url, array(
-            'cookies' => $this->cookiejar,
-            'allow_redirects' => false,
-        ));
-
-        return $this->sendRequest($request);
     }
 
     /**
@@ -248,5 +245,21 @@ class WebApi
         ));
 
         return $client;
+    }
+
+    /**
+     * Get a client ID from an e-mail address
+     *
+     * @param $email string
+     * @return string
+     */
+    public function searchClientId($email)
+    {
+        $response = $this->get('/en/client/manage', array(
+            'email' => $email,
+            'submit' => "Search",
+        ));
+
+        return trim($this->getBetween((string) $response->getBody(), '/en/client/view/id/', '"'));
     }
 }

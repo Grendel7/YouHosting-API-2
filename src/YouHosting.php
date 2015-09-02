@@ -35,13 +35,22 @@ class YouHosting
      *
      * @param mixed $client An instance of a Client or a client ID
      * @return Client
+     * @throws YouHostingException
      */
     public function getClient($client)
     {
         if($client instanceof Client){
-            $id = $client->id;
-        } else {
+            if(!empty($client->id)) {
+                $id = $client->id;
+            } elseif(!empty($client->email)){
+                $id = $this->api->searchClientId($client->email);
+            } else {
+                throw new YouHostingException("You need to provide either a client ID (recommended) or client e-mail to search for");
+            }
+        } elseif (is_numeric($client)) {
             $id = $client;
+        } else {
+            $id = $this->api->searchClientId($client);
         }
 
         return $this->api->getClient($id);
