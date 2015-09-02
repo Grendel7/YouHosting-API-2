@@ -262,4 +262,56 @@ class WebApi
 
         return trim($this->getBetween((string) $response->getBody(), '/en/client/view/id/', '"'));
     }
+
+    /**
+     * Create a new client on YouHosting
+     *
+     * @param Client $client a container for client details
+     * @param string $password
+     * @return Client
+     * @throws YouHostingException
+     */
+    public function createClient(Client $client, $password)
+    {
+        $data = $client->toArray();
+        $data['password_confirm'] = $data['password'] = $password;
+        $data['send_email'] = 0;
+        $data['submit'] = 'Save';
+
+        $response = $this->post('/en/client/add', $data);
+
+        if($response->getStatusCode() == 200){
+            $error = $this->getBetween((string) $response->getBody(), '<ul class="errors">', '</ul>');
+            $error = $this->getBetween($error, '<li>', '</li>');
+            throw new YouHostingException("Unable to create profile: ".$error);
+        }
+
+        $response = $this->get($response->getHeader('Location'));
+
+        $client->id = $this->getBetweenReverse((string) $response->getBody(), '/en/client/view/id/', '">'.$client->email);
+        return $client;
+    }
+
+    /**
+     * Get a new captcha (SVIP API only)
+     * @return array containing a numeric id and a url to the captcha iamge
+     * @throws YouHostingException
+     */
+    public function getCaptcha()
+    {
+        throw new YouHostingException("Captcha verification is only supported by the REST API");
+    }
+
+    /**
+     * Verify the captcha result (SVIP API only)
+     *
+     * @param int $id the captcha id
+     * @param string $solution the solution of the captcha submitted by the user
+     * @return bool
+     * @throws YouHostingException
+     */
+    public function checkCaptcha($id, $solution)
+    {
+        throw new YouHostingException("Captcha verification is only supported by the REST API");
+    }
 }

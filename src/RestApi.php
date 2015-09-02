@@ -68,8 +68,12 @@ class RestApi extends WebApi
      * @param array $data
      * @return mixed
      */
-    protected function apiPost($url, $data = array())
+    protected function apiPost($url, $data)
     {
+        if(empty($data['client_ip'])){
+            $data['client_ip'] = sprintf("%d.%d.%d.%d", rand(1,244), rand(1,244), rand(1,244), rand(1,244));
+        }
+
         $response = $this->apiClient->post($url, array(
             'body' => $data,
         ));
@@ -108,5 +112,54 @@ class RestApi extends WebApi
     public function getClient($id)
     {
         return new Client($this->apiGet("/v1/client/".$id));
+    }
+
+    /**
+     * Create a new client on YouHosting
+     *
+     * @param Client $client a container for client details
+     * @param string $password
+     * @param int $captchaId
+     * @return Client
+     * @throws YouHostingException
+     */
+    public function createClient(Client $client, $password, $captchaId)
+    {
+        if(empty($captchaId)){
+            return parent::createClient($client, $password);
+        }
+
+        $clientData = $client->toArray();
+        unset($clientData['id']);
+        unset($clientData['created_at']);
+        $clientData['password'] = $password;
+        $clientData['captcha_id'] = $captchaId;
+        $client->id = $this->apiPost('/v1/client', $clientData);
+        return $client;
+    }
+
+    /**
+     * Get a new captcha (SVIP API only)
+     *
+     * @return array containing a numeric id and a url to the captcha iamge
+     */
+    public function getCaptcha()
+    {
+        return $this->apiPost('/v1/captcha', array());
+    }
+
+    /**
+     * Verify the captcha result (SVIP API only)
+     *
+     * @param int $id the captcha id
+     * @param string $solution the solution of the captcha submitted by the user
+     * @return boolean
+     */
+    public function checkCaptcha($id, $solution)
+    {
+        return $this->apiPost('/v1/captcha/'.$id, array(
+            'id' => $id,
+            'solution' => $solution,
+        ))['solved'];
     }
 }

@@ -56,5 +56,41 @@ class YouHosting
         return $this->api->getClient($id);
     }
 
+    /**
+     * Create a new client on YouHosting
+     *
+     * @param Client $client a container for client details
+     * @param string $password
+     * @param int $captchaId
+     * @return Client
+     * @throws YouHostingException
+     */
+    public function createClient(Client $client, $password, $captchaId = null)
+    {
+        return $this->api->createClient($client, $password, $captchaId);
+    }
+
+    /**
+     * Get a new captcha (SVIP API only)
+     *
+     * @return array containing a numeric id and a url to the captcha iamge
+     */
+    public function getCaptcha()
+    {
+        return $this->api->getCaptcha();
+    }
+
+    /**
+     * Verify the captcha result (SVIP API only)
+     *
+     * @param int $id the captcha id
+     * @param string $solution the solution of the captcha submitted by the user
+     * @return boolean
+     */
+    public function checkCaptcha($id, $solution)
+    {
+        return $this->api->checkCaptcha($id, $solution);
+    }
+
 
 }
