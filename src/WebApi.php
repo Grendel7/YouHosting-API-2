@@ -456,42 +456,70 @@ class WebApi
 
     public function suspendAccount($id, $reason, $info)
     {
-
+        return $this->changeAccountStatus($id, 'suspended', $reason, $info);
     }
 
     public function unsuspendAccount($id, $reason, $info)
     {
-
+        return $this->changeAccountStatus($id, 'active', $reason, $info);
     }
 
     public function changeAccountStatus($id, $status, $reason, $info)
     {
+        $response = $this->post('/en/client-account/edit/id/'.$id, array(
+            'status' => $status,
+            'notes' => $info,
+            'reason' => $reason,
+        ));
 
+        if($response->getStatusCode() == 302){
+            return true;
+        }
+
+        $errorList = $this->getBetween((string) $response->getBody(), '<ul class="errors">', '</ul>');
+        throw new YouHostingException("Error while changing account status: ".$this->getBetween($errorList, '<li>', '</li>'));
     }
 
     public function suspendClient($id, $allAccounts, $allVps, $reason, $info)
     {
-
+        return $this->changeClientStatus($id, 'suspended', $allAccounts, $allVps, $reason, $info);
     }
 
     public function unsuspendClient($id, $allAccounts, $allVps, $reason, $info)
     {
-
+        return $this->changeClientStatus($id, 'active', $allAccounts, $allVps, $reason, $info);
     }
 
     public function changeClientStatus($id, $status, $allAccounts, $allVps, $reason, $info)
     {
+        $response = $this->post('/en/client/change-status/id/'.$id, array(
+            'status' => $status,
+            'notes' => $info,
+            'reason' => $reason,
+            'change_accounts' => $allAccounts,
+            'change_vps' => $allVps,
+        ));
 
+        if($response->getStatusCode() == 302){
+            return true;
+        }
+
+        $errorList = $this->getBetween((string) $response->getBody(), '<ul class="errors">', '</ul>');
+        throw new YouHostingException("Error while changing client status: ".$this->getBetween($errorList, '<li>', '</li>'));
     }
 
     public function deleteAccount($id)
     {
+        $response = $this->get('/en/client-account/delete/id/'.$id);
 
+        return strpos($response->getHeader('Location'), '/en/client-account/edit/id/') === false;
     }
 
     public function deleteClient($id)
     {
+        $response = $this->get('/en/client/delete/cid/'.$id.'/id/'.$id);
 
+        return strpos($response->getHeader('Location'), '/en/client/index/module') !== false;
     }
 
     public function getSubdomains()

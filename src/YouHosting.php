@@ -191,41 +191,117 @@ class YouHosting
         return $this->api->listAccounts($page);
     }
 
+    /**
+     * Suspend a hosting account
+     *
+     * @param Account|string|int $account
+     * @param string $reason Can be 'none', 'abuse', 'non_payment' or 'fraud'
+     * @param string $info
+     * @return bool|mixed
+     * @throws YouHostingException
+     */
     public function suspendAccount($account, $reason = "", $info = "")
     {
         return $this->api->suspendAccount($this->getAccountId($account), $reason, $info);
     }
 
+    /**
+     * Suspend a client profile
+     *
+     * @param Client|string|int $client
+     * @param bool|false $allAccounts Set to true to suspend all accounts as well
+     * @param bool|false $allVps Set to true to suspend all VPS as well
+     * @param string $reason Can be 'none', 'abuse', 'non_payment' or 'fraud'
+     * @param string $info
+     * @return bool
+     * @throws YouHostingException
+     */
     public function suspendClient($client, $allAccounts = false, $allVps = false, $reason = "", $info = "")
     {
         return $this->api->suspendClient($this->getClientId($client), $allAccounts, $allVps, $reason, $info);
     }
 
+    /**
+     * Reactivate a hosting account
+     *
+     * @param Account|string|int $account
+     * @param string $reason Can be 'none', 'abuse', 'non_payment' or 'fraud'
+     * @param string $info
+     * @return bool|mixed
+     * @throws YouHostingException
+     */
     public function unsuspendAccount($account, $reason = "", $info = "")
     {
         return $this->api->unsuspendAccount($this->getAccountId($account), $reason, $info);
     }
 
-    public function unsuspendClient($client, $allAccounts = false, $allVps = false, $reason = "", $info = "")
+    /**
+     * Reactivate a client profile
+     *
+     * @param Client|string|int $client
+     * @param bool|false $allAccounts Set to true to suspend all accounts as well
+     * @param bool|false $allVps Set to true to suspend all VPS as well
+     * @param string $reason Can be 'none', 'abuse', 'non_payment' or 'fraud'
+     * @param string $info
+     * @return bool
+     * @throws YouHostingException
+     */
+    public function unsuspendClient($client, $allAccounts = false, $allVps = false, $reason = "none", $info = "")
     {
         return $this->api->unsuspendClient($this->getClientId($client), $allAccounts, $allVps, $reason, $info);
     }
 
+    /**
+     * Change the status of a hosting account
+     *
+     * @param Account|string|int $account
+     * @param string $status Can be 'pending_payment', 'active', 'suspended', 'canceled' or 'failed'
+     * @param string $reason Can be 'none', 'abuse', 'non_payment' or 'fraud'
+     * @param string $info
+     * @return bool|mixed
+     * @throws YouHostingException
+     */
     public function changeAccountStatus($account, $status, $reason = "", $info = "")
     {
         return $this->api->changeAccountStatus($this->getAccountId($account), $status, $reason, $info);
     }
 
-    public function changeClientStatus($client, $status, $allAccounts = false, $allVps = false, $reason = "", $info = "")
+    /**
+     * Change the status of a client profile
+     *
+     * @param Client|string|int $client
+     * @param string $status Can be 'pending_phone_confirmation', 'pending_confirmation', 'active', 'suspended' or 'canceled'
+     * @param bool|false $allAccounts Set to true to suspend all accounts as well
+     * @param bool|false $allVps Set to true to suspend all VPS as well
+     * @param string $reason Can be 'none', 'abuse', 'non_payment' or 'fraud'
+     * @param string $info
+     * @return bool
+     * @throws YouHostingException
+     */
+    public function changeClientStatus($client, $status, $allAccounts = false, $allVps = false, $reason = "none", $info = "")
     {
         return $this->api->changeClientStatus($this->getClientId($client), $status, $allAccounts, $allVps, $reason, $info);
     }
 
+    /**
+     * Delete a hosting account (must be cancelled first!)
+     *
+     * @param Account|string|int $account
+     * @return bool
+     * @throws YouHostingException
+     */
     public function deleteAccount($account)
     {
         return $this->api->deleteAccount($this->getAccountId($account));
     }
 
+    /**
+     * Delete a client profile (the client may not have any active accounts or vps)
+     *
+     * @param Client|string|int $client
+     * @return bool
+     * @throws YouHostingException
+     */
     public function deleteClient($client)
     {
         return $this->api->deleteClient($this->getClientId($client));
