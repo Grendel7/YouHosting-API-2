@@ -181,4 +181,9 @@ class RestApi extends WebApi
     {
         return $this->apiGet("/v1/client/".$id."/login-url");
     }
+
+    public function getAccount($id)
+    {
+        return new Account($this->apiGet("/v1/account/".$id));
+    }
 }

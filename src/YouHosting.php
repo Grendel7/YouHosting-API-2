@@ -82,10 +82,34 @@ class YouHosting
         return $this->api->createClient($client, $password, $captchaId);
     }
 
+    public function getAccount($account)
+    {
+        return $this->api->getAccount($this->getAccountId($account));
+    }
+
+    protected function getAccountId($account)
+    {
+        if($account instanceof Account){
+            if(!empty($account->id)){
+                $id = $account->id;
+            } elseif(!empty($account->domain)){
+                $id = $this->api->searchAccountId($account->domain);
+            } else {
+                throw new YouHostingException("You need to provide either an account ID (recommended) or account domain to search for");
+            }
+        } elseif(is_numeric($account)){
+            $id = $account;
+        } else {
+            $id = $this->api->searchAccountId($account);
+        }
+
+        return $id;
+    }
+
     /**
      * Get a new captcha (SVIP API only)
      *
-     * @return array containing a numeric id and a url to the captcha iamge
+     * @return array containing a numeric id and a url to the captcha image
      */
     public function getCaptcha()
     {
