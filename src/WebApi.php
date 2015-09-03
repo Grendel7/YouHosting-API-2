@@ -314,4 +314,36 @@ class WebApi
     {
         throw new YouHostingException("Captcha verification is only supported by the REST API");
     }
+
+    public function listClients($page)
+    {
+        $response = $this->get('/en/client/index/page/'.$page);
+        $table = $this->getBetween((string) $response->getBody(), "<tbody>", '</tbody>');
+        $rows = explode("</tr>", $table);
+
+        $clients = array();
+
+        foreach($rows as $row){
+            $id = $this->getBetween($row, '/en/client/view/id/', '">');
+            $clients[] = $this->getClient($id);
+        }
+
+        return array(
+            'pages' => null,
+            'page' => $page,
+            'per_page' => count($clients),
+            'total' => null,
+            'list' => $clients
+        );
+    }
+
+    public function getClientLoginUrl($id)
+    {
+        $response = $this->get('/en/jump-to/client-area/id/'.$id);
+        if($response->getStatusCode() != 302){
+            throw new YouHostingException("Wrong response status code, expected 302 but received ".$response->getStatusCode());
+        }
+
+        return $response->getHeader('Location');
+    }
 }

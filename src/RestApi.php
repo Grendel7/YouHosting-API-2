@@ -53,7 +53,7 @@ class RestApi extends WebApi
     protected function apiGet($url, $data = array())
     {
         if(!empty($data)){
-            $url .= http_build_query($data);
+            $url = $url . "?" . http_build_query($data);
         }
 
         $response = $this->apiClient->get($url);
@@ -161,5 +161,24 @@ class RestApi extends WebApi
             'id' => $id,
             'solution' => $solution,
         ))['solved'];
+    }
+
+    public function listClients($page)
+    {
+        $result = $this->apiGet("/v1/client/list", array(
+            'page' => $page,
+            'per_page' => 100,
+        ));
+
+        array_walk($result['list'], function($value, $key){
+            $result['list'][$key] = new Client($value);
+        });
+
+        return $result;
+    }
+
+    public function getClientLoginUrl($id)
+    {
+        return $this->apiGet("/v1/client/".$id."/login-url");
     }
 }

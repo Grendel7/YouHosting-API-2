@@ -31,13 +31,13 @@ class YouHosting
     }
 
     /**
-     * Get a client from YouHosting
+     * Get the client ID from a Client object, e-mail or id
      *
-     * @param mixed $client An instance of a Client or a client ID
-     * @return Client
+     * @param Client|string|int $client
+     * @return int
      * @throws YouHostingException
      */
-    public function getClient($client)
+    protected function getClientId($client)
     {
         if($client instanceof Client){
             if(!empty($client->id)) {
@@ -53,7 +53,19 @@ class YouHosting
             $id = $this->api->searchClientId($client);
         }
 
-        return $this->api->getClient($id);
+        return (int)$id;
+    }
+
+    /**
+     * Get a client from YouHosting
+     *
+     * @param mixed $client An instance of a Client or a client ID
+     * @return Client
+     * @throws YouHostingException
+     */
+    public function getClient($client)
+    {
+        return $this->api->getClient($this->getClientId($client));
     }
 
     /**
@@ -92,5 +104,84 @@ class YouHosting
         return $this->api->checkCaptcha($id, $solution);
     }
 
+    /**
+     * Get a list of clients
+     *
+     * Returns array with the parameter list (containing an array of Client objects) and per_page (telling you the number of clients.
+     * When using the SVIP API, you also get pages (the total number of pages), and total (the total number of clients for the reseller)
+     *
+     * @param int $page optional the page number
+     * @return array
+     */
+    public function listClients($page = 1)
+    {
+        return $this->api->listClients($page);
+    }
+
+    /**
+     * Get the login URL for a client
+     *
+     * @param Client|string|int a client object, client e-mail (not recommended) or client ID
+     * @return mixed
+     */
+    public function getLoginUrl($client)
+    {
+        return $this->api->getClientLoginUrl($this->getClientId($client));
+    }
+
+    public function getLoginUrlAccount($account)
+    {
+
+    }
+
+    public function checkDomain($type, $domain, $subdomain = "")
+    {
+
+    }
+
+    public function listAccounts($page = 1)
+    {
+
+    }
+
+    public function suspendAccount($account, $reason = "")
+    {
+
+    }
+
+    public function suspendClient($client, $reason = "")
+    {
+
+    }
+
+    public function unsuspendAccount($account, $reason = "")
+    {
+
+    }
+
+    public function unsuspendClient($client, $reason = "")
+    {
+
+    }
+
+    public function deleteAccount($id)
+    {
+
+    }
+
+    public function getSubdomains()
+    {
+
+    }
+
+    public function getPlans()
+    {
+
+    }
+
+    public function getNameservers()
+    {
+
+    }
 
 }
