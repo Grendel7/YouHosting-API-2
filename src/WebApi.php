@@ -90,7 +90,8 @@ class WebApi
      */
     protected function getBetween($content, $start, $end = null)
     {
-        if(($startIndex = strpos($content, $start) + strlen($start)) === false){
+        $startIndex = strpos($content, $start) + strlen($start);
+        if($startIndex === false){
             return false;
         }
 
@@ -350,7 +351,7 @@ class WebApi
 
     /**
      * Get a new captcha (SVIP API only)
-     * @return array containing a numeric id and a url to the captcha iamge
+     * @return array containing a numeric id and a url to the captcha image
      * @throws YouHostingException
      */
     public function getCaptcha()
@@ -468,17 +469,17 @@ class WebApi
 
     }
 
-    public function suspendClient($id, $reason, $info)
+    public function suspendClient($id, $allAccounts, $allVps, $reason, $info)
     {
 
     }
 
-    public function unsuspendClient($id, $reason, $info)
+    public function unsuspendClient($id, $allAccounts, $allVps, $reason, $info)
     {
 
     }
 
-    public function changeClientStatus($id, $status, $reason, $info)
+    public function changeClientStatus($id, $status, $allAccounts, $allVps, $reason, $info)
     {
 
     }
@@ -495,7 +496,30 @@ class WebApi
 
     public function getSubdomains()
     {
+        $response = $this->get('/en/domains');
+        $domains = array();
 
+        $content = $this->getBetween((string) $response->getBody(), '<tr  class="alt">', "</tbody>");
+        $rows = explode("</tr>", trim($content));
+        array_pop($rows);
+
+        foreach($rows as $row){
+            $columns = explode("</td>", trim($row));
+
+            foreach($columns as $key => $value){
+                $startIndex = strpos($value, '<td>') + strlen('<td>');
+                $columns[$key] = substr($value, $startIndex);
+            }
+
+            if($columns[2] == "No"){
+                continue;
+            }
+
+            $domainId = (int)$this->getBetween($columns[3], '/en/domains/options/id/', '">');
+            $domains[$domainId] = $this->getBetween($columns[0], '">', '</a>');
+        }
+
+        return $domains;
     }
 
     public function getPlans()

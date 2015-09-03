@@ -215,14 +215,14 @@ class RestApi extends WebApi
         return $result;
     }
 
-    public function suspendAccount($id)
+    public function suspendAccount($id, $reason, $info)
     {
         return $this->apiPost("/v1/account/".$id."/suspend", array(
             'id' => $id
         ));
     }
 
-    public function unsuspendAccount($id)
+    public function unsuspendAccount($id, $reason, $info)
     {
         return $this->apiPost("/v1/account/".$id."/unsuspend", array(
             'id' => $id

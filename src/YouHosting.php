@@ -231,16 +231,31 @@ class YouHosting
         return $this->api->deleteClient($this->getClientId($client));
     }
 
+    /**
+     * Get the list of domains for which subdomains can be created
+     *
+     * @return array
+     */
     public function getSubdomains()
     {
         return $this->api->getSubdomains();
     }
 
+    /**
+     * Get a list of HostingPlans detailing which plans are available
+     *
+     * @return HostingPlan[]
+     */
     public function getPlans()
     {
         return $this->api->getPlans();
     }
 
+    /**
+     * Get a list of nameservers and nameserver IPs
+     *
+     * @return array
+     */
     public function getNameservers()
     {
         return $this->api->getNameservers();
