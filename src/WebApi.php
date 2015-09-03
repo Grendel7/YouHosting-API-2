@@ -88,11 +88,22 @@ class WebApi
      * @param string $end
      * @return string
      */
-    protected function getBetween($content, $start, $end)
+    protected function getBetween($content, $start, $end = null)
     {
-        $startIndex = strpos($content, $start) + strlen($start);
-        $length = strpos($content, $end, $startIndex) - $startIndex;
-        return substr($content, $startIndex, $length);
+        if(($startIndex = strpos($content, $start) + strlen($start)) === false){
+            return false;
+        }
+
+        if(!$end){
+            return substr($content, $startIndex);
+        }
+
+        $length = strpos($content, $end, $startIndex);
+        if($length === false){
+            return false;
+        }
+
+        return substr($content, $startIndex, $length - $startIndex);
     }
 
     /**
@@ -277,7 +288,7 @@ class WebApi
             ),
             'period' => $period,
             'created_at' => $this->getBetween(
-                $this->getBetween($content, '<td>Created At</td', '</tr>'), '<td>', '</td>'
+                $this->getBetween($content, '<td>Created At</td>', '</tr>'), '<td>', '</td>'
             ),
         ));
     }
@@ -440,5 +451,92 @@ class WebApi
             'total' => null,
             'list' => $accounts
         );
+    }
+
+    public function suspendAccount($id, $reason, $info)
+    {
+
+    }
+
+    public function unsuspendAccount($id, $reason, $info)
+    {
+
+    }
+
+    public function changeAccountStatus($id, $status, $reason, $info)
+    {
+
+    }
+
+    public function suspendClient($id, $reason, $info)
+    {
+
+    }
+
+    public function unsuspendClient($id, $reason, $info)
+    {
+
+    }
+
+    public function changeClientStatus($id, $status, $reason, $info)
+    {
+
+    }
+
+    public function deleteAccount($id)
+    {
+
+    }
+
+    public function deleteClient($id)
+    {
+
+    }
+
+    public function getSubdomains()
+    {
+
+    }
+
+    public function getPlans()
+    {
+        $response = $this->get('/en/hosting-plan');
+        $plans = array();
+
+        $content = $this->getBetween((string) $response->getBody(), '<tbody>', '</tbody>');
+        $rows = explode("</tr>", $content);
+
+        foreach($rows as $row){
+            $columns = explode("</td>", $row);
+
+            if(!isset($columns[4])){
+                continue;
+            }
+            $id = $this->getBetween($columns[4], '/en/hosting-plan/toggle/id/', '">');
+
+            $plans[] = new HostingPlan(array(
+                'id' => (int)$id,
+                'name' => $this->getBetween($columns[1], "<td>"),
+                'type' => strtolower($this->getBetween($columns[3], '<td>')),
+            ));
+        }
+
+        return $plans;
+    }
+
+    public function getNameservers()
+    {
+        $response = $this->get('/en/settings/nameservers');
+        $return = array();
+        $content = $this->getBetween((string) $response->getBody(), '<tbody>', '</tbody>');
+
+        for($i = 1; $i <= 4; $i++){
+            $return['ns'.$i] = $this->getBetween($content, '<input type="text" name="ns'.$i.'" id="ns'.$i.'" value="', '">');
+            $return['ip'.$i] = $this->getBetween(
+                $this->getBetween($content, 'Nameserver '.$i, '</tr>'), '<td class="element" title="', '">'
+            );
+        }
+
+        return $return;
     }
 }

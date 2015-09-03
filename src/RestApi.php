@@ -214,4 +214,41 @@ class RestApi extends WebApi
 
         return $result;
     }
+
+    public function suspendAccount($id)
+    {
+        return $this->apiPost("/v1/account/".$id."/suspend", array(
+            'id' => $id
+        ));
+    }
+
+    public function unsuspendAccount($id)
+    {
+        return $this->apiPost("/v1/account/".$id."/unsuspend", array(
+            'id' => $id
+        ));
+    }
+
+    public function getSubdomains()
+    {
+        return $this->apiGet('/v1/settings/subdomains');
+    }
+
+    public function getPlans()
+    {
+        $plans = $this->apiGet('/v1/settings/plans');
+
+        $return = array();
+        foreach($plans as $plan){
+            $return[] = new HostingPlan($plan);
+        }
+
+        return $return;
+    }
+
+    public function getNameservers()
+    {
+        return $this->apiGet('/v1/settings/nameservers');
+    }
+
 }

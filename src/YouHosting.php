@@ -191,49 +191,59 @@ class YouHosting
         return $this->api->listAccounts($page);
     }
 
-    public function suspendAccount($account, $reason = "")
+    public function suspendAccount($account, $reason = "", $info = "")
     {
-
+        return $this->api->suspendAccount($this->getAccountId($account), $reason, $info);
     }
 
-    public function suspendClient($client, $reason = "")
+    public function suspendClient($client, $allAccounts = false, $allVps = false, $reason = "", $info = "")
     {
-
+        return $this->api->suspendClient($this->getClientId($client), $allAccounts, $allVps, $reason, $info);
     }
 
-    public function unsuspendAccount($account, $reason = "")
+    public function unsuspendAccount($account, $reason = "", $info = "")
     {
-
+        return $this->api->unsuspendAccount($this->getAccountId($account), $reason, $info);
     }
 
-    public function unsuspendClient($client, $reason = "")
+    public function unsuspendClient($client, $allAccounts = false, $allVps = false, $reason = "", $info = "")
     {
-
+        return $this->api->unsuspendClient($this->getClientId($client), $allAccounts, $allVps, $reason, $info);
     }
 
-    public function deleteAccount($id)
+    public function changeAccountStatus($account, $status, $reason = "", $info = "")
     {
-
+        return $this->api->changeAccountStatus($this->getAccountId($account), $status, $reason, $info);
     }
 
-    public function deleteClient($id)
+    public function changeClientStatus($client, $status, $allAccounts = false, $allVps = false, $reason = "", $info = "")
     {
+        return $this->api->changeClientStatus($this->getClientId($client), $status, $allAccounts, $allVps, $reason, $info);
+    }
 
+    public function deleteAccount($account)
+    {
+        return $this->api->deleteAccount($this->getAccountId($account));
+    }
+
+    public function deleteClient($client)
+    {
+        return $this->api->deleteClient($this->getClientId($client));
     }
 
     public function getSubdomains()
     {
-
+        return $this->api->getSubdomains();
     }
 
     public function getPlans()
     {
-
+        return $this->api->getPlans();
     }
 
     public function getNameservers()
     {
-
+        return $this->api->getNameservers();
     }
 
 }
