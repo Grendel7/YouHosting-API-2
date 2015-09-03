@@ -200,4 +200,18 @@ class RestApi extends WebApi
             'subdomain' => $subdomain,
         ));
     }
+
+    public function listAccounts($page)
+    {
+        $result = $this->apiGet("/v1/account/list", array(
+            'page' => $page,
+            'per_page' => 100,
+        ));
+
+        array_walk($result['list'], function($value, $key){
+            $result['list'][$key] = new Account($value);
+        });
+
+        return $result;
+    }
 }

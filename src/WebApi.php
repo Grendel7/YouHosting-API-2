@@ -419,4 +419,26 @@ class WebApi
             throw new YouHostingException("Domain ".$domain." is already registered");
         }
     }
+
+    public function listAccounts($page)
+    {
+        $response = $this->get('/en/client-account/index/page/'.$page);
+        $table = $this->getBetween((string) $response->getBody(), "<tbody>", '</tbody>');
+        $rows = explode("</tr>", $table);
+
+        $accounts = array();
+
+        foreach($rows as $row){
+            $id = $this->getBetween($row, '/en/client-account/edit/id/', '/page/');
+            $accounts[] = $this->getAccount($id);
+        }
+
+        return array(
+            'pages' => null,
+            'page' => $page,
+            'per_page' => count($accounts),
+            'total' => null,
+            'list' => $accounts
+        );
+    }
 }

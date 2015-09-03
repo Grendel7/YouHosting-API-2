@@ -131,7 +131,7 @@ class YouHosting
     /**
      * Get a list of clients
      *
-     * Returns array with the parameter list (containing an array of Client objects) and per_page (telling you the number of clients.
+     * Returns array with the parameter list (containing an array of Client objects) and per_page (telling you the number of clients).
      * When using the SVIP API, you also get pages (the total number of pages), and total (the total number of clients for the reseller)
      *
      * @param int $page optional the page number
@@ -177,9 +177,18 @@ class YouHosting
         return $this->api->checkDomain($type, $domain, $subdomain);
     }
 
+    /**
+     * Get a list of accounts
+     *
+     * Returns array with the parameter list (containing an array of Account objects) and per_page (telling you the number of accounts).
+     * When using the SVIP API, you also get pages (the total number of pages), and total (the total number of accounts for the reseller)
+     *
+     * @param int $page optional the page number
+     * @return array
+     */
     public function listAccounts($page = 1)
     {
-
+        return $this->api->listAccounts($page);
     }
 
     public function suspendAccount($account, $reason = "")
@@ -203,6 +212,11 @@ class YouHosting
     }
 
     public function deleteAccount($id)
+    {
+
+    }
+
+    public function deleteClient($id)
     {
 
     }
