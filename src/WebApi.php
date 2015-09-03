@@ -391,4 +391,14 @@ class WebApi
 
         return $response->getHeader('Location');
     }
+
+    public function getAccountLoginUrl($id)
+    {
+        $response = $this->get('/en/jump-to/client-account/id/'.$id);
+        if($response->getStatusCode() != 302){
+            throw new YouHostingException("Wrong response status code, expected 302 but received ".$response->getStatusCode());
+        }
+
+        return $response->getHeader('Location');
+    }
 }

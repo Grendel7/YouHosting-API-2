@@ -155,7 +155,7 @@ class YouHosting
 
     public function getLoginUrlAccount($account)
     {
-
+        return $this->api->getAccountLoginUrl($this->getAccountId($account));
     }
 
     public function checkDomain($type, $domain, $subdomain = "")
