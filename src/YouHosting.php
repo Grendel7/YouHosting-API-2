@@ -59,7 +59,7 @@ class YouHosting
     /**
      * Get a client from YouHosting
      *
-     * @param mixed $client An instance of a Client or a client ID
+     * @param Client|string|int $client
      * @return Client
      * @throws YouHostingException
      */
@@ -82,11 +82,25 @@ class YouHosting
         return $this->api->createClient($client, $password, $captchaId);
     }
 
+    /**
+     * Get an account from YouHosting
+     *
+     * @param Account|string|int $account
+     * @return Account
+     * @throws YouHostingException
+     */
     public function getAccount($account)
     {
         return $this->api->getAccount($this->getAccountId($account));
     }
 
+    /**
+     * Get an account id from either an id, email or account object
+     *
+     * @param $account
+     * @return int
+     * @throws YouHostingException
+     */
     protected function getAccountId($account)
     {
         if($account instanceof Account){
@@ -103,7 +117,7 @@ class YouHosting
             $id = $this->api->searchAccountId($account);
         }
 
-        return $id;
+        return (int)$id;
     }
 
     /**
