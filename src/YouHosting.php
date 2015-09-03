@@ -146,21 +146,35 @@ class YouHosting
      * Get the login URL for a client
      *
      * @param Client|string|int a client object, client e-mail (not recommended) or client ID
-     * @return mixed
+     * @return string
      */
     public function getLoginUrl($client)
     {
         return $this->api->getClientLoginUrl($this->getClientId($client));
     }
 
+    /**
+     * Get the login URL for an account
+     *
+     * @param Account|string|int $account an account object, domain name (not recommended) or account ID
+     * @return string
+     */
     public function getLoginUrlAccount($account)
     {
         return $this->api->getAccountLoginUrl($this->getAccountId($account));
     }
 
+    /**
+     * Check if a domain name is available
+     *
+     * @param string $type 'domain' or 'subdomain' to separate whether it's an owned domain or a subdomain
+     * @param string $domain If the type is 'domain', then this contains the full domain. If the type is 'subdomain', then this is the master domain.
+     * @param string $subdomain If the type is 'subdomain', then this is the client's custom part of the subdomain
+     * @return bool
+     */
     public function checkDomain($type, $domain, $subdomain = "")
     {
-
+        return $this->api->checkDomain($type, $domain, $subdomain);
     }
 
     public function listAccounts($page = 1)

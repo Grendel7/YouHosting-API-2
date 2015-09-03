@@ -191,4 +191,13 @@ class RestApi extends WebApi
     {
         return new Account($this->apiGet("/v1/account/".$id));
     }
+
+    public function checkDomain($type, $domain, $subdomain)
+    {
+        return $this->apiGet('/v1/account/check', array(
+            'type' => $type,
+            'domain' => $domain,
+            'subdomain' => $subdomain,
+        ));
+    }
 }

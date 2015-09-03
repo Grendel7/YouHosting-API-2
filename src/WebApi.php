@@ -401,4 +401,22 @@ class WebApi
 
         return $response->getHeader('Location');
     }
+
+    public function checkDomain($type, $domain, $subdomain)
+    {
+        if($type == 'subdomain'){
+            $domain = $subdomain . "." . $domain;
+        }
+
+        $response = $this->get('/en/client-account/manage', array(
+            'domain' => $domain,
+            'submit' => 'Search',
+        ));
+
+        if(strpos($response->getBody(), "cPanel") !== false){
+            return true;
+        } else {
+            throw new YouHostingException("Domain ".$domain." is already registered");
+        }
+    }
 }
