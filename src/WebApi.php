@@ -625,4 +625,41 @@ class WebApi
         $error = $this->getBetween($error, '<li>', '</li>');
         throw new YouHostingException("Error while changing password: ".$error);
     }
+
+    public function getClientBalance($id)
+    {
+        $response = $this->get('/en/client/view/id/'.$id);
+
+        $string = $this->getBetween((string) $response->getBody(), "/en/client/balance/id/", "</span>");
+        return trim($this->getBetween($string, "Balance", "USD"));
+    }
+
+    public function coverInvoice($id, $invoiceId = null)
+    {
+        $url = "http://www.youhosting.com/en/client/cover/id/".$id;
+
+        if(!empty($invoiceId)){
+            $url .= "?invoice_id=" . filter_var($invoiceId, FILTER_SANITIZE_NUMBER_INT);
+        }
+
+        $this->get($url);
+        return true;
+    }
+
+    public function updateBalance($id, $amount, $description, $gateway = "Not Provided", $invoiceId = null)
+    {
+        $response = $this->post('/en/client/balance/id/'.$id, array(
+            'amount' => $amount,
+            'description' => $description,
+            'invoice_id' => filter_var($invoiceId, FILTER_SANITIZE_NUMBER_INT),
+            'gateway' => $gateway,
+        ));
+
+        if($response->getStatusCode() == 200){
+            throw new YouHostingException("Error while updating balance: ".
+                $this->getBetween((string) $response->getBody(), "<p><strong>error: </strong>","</p>")
+            );
+        }
+        return true;
+    }
 }

@@ -377,4 +377,44 @@ class YouHosting
         return $this->api->changeClientPassword($this->getClientId($client), $password);
     }
 
+    /**
+     * Get the current account balance of a client
+     *
+     * @param Client|int|string $client An ID or email to identify the user
+     * @return string
+     */
+    public function getClientBalance($client)
+    {
+        return $this->api->getClientBalance($this->getClientId($client));
+    }
+
+    /**
+     * Apply a transaction to the balance of a client
+     *
+     * @param Client|int|string $client An ID or email to identify the user
+     * @param string $amount The amount to apply to the balance. This can be a positive or negative number.
+     * @param string $description A description text of the payment.
+     * @param string $gateway The name of the payment gateway (can be any text)
+     * @param string $invoiceId An optional invoice to cover with this payment
+     * @return bool
+     * @throws YouHostingException
+     */
+    public function updateBalance($client, $amount, $description, $gateway, $invoiceId = null)
+    {
+        return $this->api->updateBalance($this->getClientId($client), $amount, $description, $gateway, $invoiceId);
+    }
+
+    /**
+     * Cover invoices of the client using the account balance
+     *
+     * @param Client|int|string $client An ID or email to identify the user
+     * @param string $invoiceId Optional. If this is not provided, all invoices will be covered.
+     * @return bool
+     * @throws YouHostingException
+     */
+    public function coverInvoice($client, $invoiceId = null)
+    {
+        return $this->api->coverInvoice($this->getClientId($client), $invoiceId);
+    }
+
 }
