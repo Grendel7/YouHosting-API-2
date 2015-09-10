@@ -591,4 +591,38 @@ class WebApi
 
         return $return;
     }
+
+    public function changeClientPassword($id, $password)
+    {
+        $response = $this->post('/en/client/change-password/id/'.$id, array(
+            'password' => $password,
+            'password_confirm' => $password,
+            'submit' => 'Change',
+        ));
+
+        if($response->getStatusCode() == 302){
+            return true;
+        }
+
+        $error = $this->getBetween((string) $response->getBody(), '<ul class="errors">', '</ul>');
+        $error = $this->getBetween($error, '<li>', '</li>');
+        throw new YouHostingException("Error while changing password: ".$error);
+    }
+
+    public function changeAccountPassword($id, $password)
+    {
+        $response = $this->post('/en/client-account/change-password/id/'.$id, array(
+            'password' => $password,
+            'password_confirm' => $password,
+            'submit' => 'Change',
+        ));
+
+        if($response->getStatusCode() == 302){
+            return true;
+        }
+
+        $error = $this->getBetween((string) $response->getBody(), '<ul class="errors">', '</ul>');
+        $error = $this->getBetween($error, '<li>', '</li>');
+        throw new YouHostingException("Error while changing password: ".$error);
+    }
 }

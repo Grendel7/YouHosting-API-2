@@ -351,4 +351,30 @@ class YouHosting
         return $this->api->getNameservers();
     }
 
+    /**
+     * Change the password of a hosting account
+     *
+     * @param Account|int|string $account An ID or domain to identify the account
+     * @param string $password The new password
+     * @return bool
+     * @throws YouHostingException
+     */
+    public function changeAccountPassword($account, $password)
+    {
+        return $this->api->changeAccountPassword($this->getAccountId($account), $password);
+    }
+
+    /**
+     * Change the password of a client profile
+     *
+     * @param Client|int|string $client An ID or email to identify the user
+     * @param string $password The new password
+     * @return bool
+     * @throws YouHostingException
+     */
+    public function changeClientPassword($client, $password)
+    {
+        return $this->api->changeClientPassword($this->getClientId($client), $password);
+    }
+
 }
