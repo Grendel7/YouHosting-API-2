@@ -192,7 +192,7 @@ class WebApi
      * @param string $end
      * @return string
      */
-    protected function getBetween($content, $start, $end = null)
+    public function getBetween($content, $start, $end = null)
     {
         $startIndex = strpos($content, $start) + strlen($start);
         if ($startIndex === false) {
@@ -274,7 +274,7 @@ class WebApi
      * @param $end
      * @return string
      */
-    protected function getBetweenReverse($content, $start, $end)
+    public function getBetweenReverse($content, $start, $end)
     {
         $endIndex = strrpos($content, $end);
         $startIndex = strrpos($content, $start, -1 * (strlen($content) - $endIndex)) + strlen($start);

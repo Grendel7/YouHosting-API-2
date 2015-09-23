@@ -418,4 +418,30 @@ class YouHosting
         return $this->api->post($url, $data);
     }
 
+    /**
+     * Get the substring of $content between the first occurrence of $start until $end
+     *
+     * @param string $content
+     * @param string $start
+     * @param string $end
+     * @return string
+     */
+    public function getBetween($content, $start, $end = null)
+    {
+        return $this->api->getBetween($content, $start, $end);
+    }
+
+    /**
+     * Get the substring of $content between the last occurrence of $end until $start
+     *
+     * @param $content
+     * @param $start
+     * @param $end
+     * @return string
+     */
+    public function getBetweenReverse($content, $start, $end)
+    {
+        return $this->api->getBetweenReverse($content, $start, $end);
+    }
+
 }
