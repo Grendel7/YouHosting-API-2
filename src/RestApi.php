@@ -44,6 +44,17 @@ class RestApi extends WebApi
     }
 
     /**
+     * Get a client from YouHosting
+     *
+     * @param $id
+     * @return Client
+     */
+    public function getClient($id)
+    {
+        return new Client($this->apiGet("/v1/client/" . $id));
+    }
+
+    /**
      * Perform a GET request
      *
      * @param string $url
@@ -52,31 +63,11 @@ class RestApi extends WebApi
      */
     protected function apiGet($url, $data = array())
     {
-        if(!empty($data)){
+        if (!empty($data)) {
             $url = $url . "?" . http_build_query($data);
         }
 
         $response = $this->apiClient->get($url);
-
-        return $this->processResponse($response);
-    }
-
-    /**
-     * Perform a POST request
-     *
-     * @param string $url
-     * @param array $data
-     * @return mixed
-     */
-    protected function apiPost($url, $data)
-    {
-        if(empty($data['client_ip'])){
-            $data['client_ip'] = sprintf("%d.%d.%d.%d", rand(1,244), rand(1,244), rand(1,244), rand(1,244));
-        }
-
-        $response = $this->apiClient->post($url, array(
-            'body' => $data,
-        ));
 
         return $this->processResponse($response);
     }
@@ -103,66 +94,6 @@ class RestApi extends WebApi
         return $json['result'];
     }
 
-    /**
-     * Get a client from YouHosting
-     *
-     * @param $id
-     * @return Client
-     */
-    public function getClient($id)
-    {
-        return new Client($this->apiGet("/v1/client/".$id));
-    }
-
-    /**
-     * Create a new client on YouHosting
-     *
-     * @param Client $client a container for client details
-     * @param string $password
-     * @param int $captchaId
-     * @return Client
-     * @throws YouHostingException
-     */
-    public function createClient(Client $client, $password, $captchaId)
-    {
-        if(empty($captchaId)){
-            return parent::createClient($client, $password);
-        }
-
-        $clientData = $client->toArray();
-        unset($clientData['id']);
-        unset($clientData['created_at']);
-        $clientData['password'] = $password;
-        $clientData['captcha_id'] = $captchaId;
-        $client->id = $this->apiPost('/v1/client', $clientData);
-        return $client;
-    }
-
-    /**
-     * Get a new captcha (SVIP API only)
-     *
-     * @return array containing a numeric id and a url to the captcha iamge
-     */
-    public function getCaptcha()
-    {
-        return $this->apiPost('/v1/captcha', array());
-    }
-
-    /**
-     * Verify the captcha result (SVIP API only)
-     *
-     * @param int $id the captcha id
-     * @param string $solution the solution of the captcha submitted by the user
-     * @return boolean
-     */
-    public function checkCaptcha($id, $solution)
-    {
-        return $this->apiPost('/v1/captcha/'.$id, array(
-            'id' => $id,
-            'solution' => $solution,
-        ))['solved'];
-    }
-
     public function listClients($page)
     {
         $result = $this->apiGet("/v1/client/list", array(
@@ -170,7 +101,7 @@ class RestApi extends WebApi
             'per_page' => 100,
         ));
 
-        array_walk($result['list'], function($value, $key){
+        array_walk($result['list'], function ($value, $key) {
             $result['list'][$key] = new Client($value);
         });
 
@@ -179,17 +110,17 @@ class RestApi extends WebApi
 
     public function getClientLoginUrl($id)
     {
-        return $this->apiGet("/v1/client/".$id."/login-url");
+        return $this->apiGet("/v1/client/" . $id . "/login-url");
     }
 
     public function getAccountLoginUrl($id)
     {
-        return $this->apiGet("/v1/account/".$id."/login-url");
+        return $this->apiGet("/v1/account/" . $id . "/login-url");
     }
 
     public function getAccount($id)
     {
-        return new Account($this->apiGet("/v1/account/".$id));
+        return new Account($this->apiGet("/v1/account/" . $id));
     }
 
     public function checkDomain($type, $domain, $subdomain)
@@ -208,7 +139,7 @@ class RestApi extends WebApi
             'per_page' => 100,
         ));
 
-        array_walk($result['list'], function($value, $key){
+        array_walk($result['list'], function ($value, $key) {
             $result['list'][$key] = new Account($value);
         });
 
@@ -217,9 +148,29 @@ class RestApi extends WebApi
 
     public function suspendAccount($id, $reason, $info)
     {
-        return $this->apiPost("/v1/account/".$id."/suspend", array(
+        return $this->apiPost("/v1/account/" . $id . "/suspend", array(
             'id' => $id
         ));
+    }
+
+    /**
+     * Perform a POST request
+     *
+     * @param string $url
+     * @param array $data
+     * @return mixed
+     */
+    protected function apiPost($url, $data)
+    {
+        if (empty($data['client_ip'])) {
+            $data['client_ip'] = sprintf("%d.%d.%d.%d", rand(1, 244), rand(1, 244), rand(1, 244), rand(1, 244));
+        }
+
+        $response = $this->apiClient->post($url, array(
+            'body' => $data,
+        ));
+
+        return $this->processResponse($response);
     }
 
     public function unsuspendAccount($id, $reason, $info)

@@ -31,6 +31,18 @@ class YouHosting
     }
 
     /**
+     * Get a client from YouHosting
+     *
+     * @param Client|string|int $client
+     * @return Client
+     * @throws YouHostingException
+     */
+    public function getClient($client)
+    {
+        return $this->api->getClient($this->getClientId($client));
+    }
+
+    /**
      * Get the client ID from a Client object, e-mail or id
      *
      * @param Client|string|int $client
@@ -39,10 +51,10 @@ class YouHosting
      */
     protected function getClientId($client)
     {
-        if($client instanceof Client){
-            if(!empty($client->id)) {
+        if ($client instanceof Client) {
+            if (!empty($client->id)) {
                 $id = $client->id;
-            } elseif(!empty($client->email)){
+            } elseif (!empty($client->email)) {
                 $id = $this->api->searchClientId($client->email);
             } else {
                 throw new YouHostingException("You need to provide either a client ID (recommended) or client e-mail to search for");
@@ -57,29 +69,16 @@ class YouHosting
     }
 
     /**
-     * Get a client from YouHosting
-     *
-     * @param Client|string|int $client
-     * @return Client
-     * @throws YouHostingException
-     */
-    public function getClient($client)
-    {
-        return $this->api->getClient($this->getClientId($client));
-    }
-
-    /**
      * Create a new client on YouHosting
      *
      * @param Client $client a container for client details
      * @param string $password
-     * @param int $captchaId
      * @return Client
      * @throws YouHostingException
      */
-    public function createClient(Client $client, $password, $captchaId = null)
+    public function createClient(Client $client, $password)
     {
-        return $this->api->createClient($client, $password, $captchaId);
+        return $this->api->createClient($client, $password);
     }
 
     /**
@@ -118,28 +117,6 @@ class YouHosting
         }
 
         return (int)$id;
-    }
-
-    /**
-     * Get a new captcha (SVIP API only)
-     *
-     * @return array containing a numeric id and a url to the captcha image
-     */
-    public function getCaptcha()
-    {
-        return $this->api->getCaptcha();
-    }
-
-    /**
-     * Verify the captcha result (SVIP API only)
-     *
-     * @param int $id the captcha id
-     * @param string $solution the solution of the captcha submitted by the user
-     * @return boolean
-     */
-    public function checkCaptcha($id, $solution)
-    {
-        return $this->api->checkCaptcha($id, $solution);
     }
 
     /**
@@ -415,6 +392,30 @@ class YouHosting
     public function coverInvoice($client, $invoiceId = null)
     {
         return $this->api->coverInvoice($this->getClientId($client), $invoiceId);
+    }
+
+    /**
+     * Access custom pages on YouHosting.com (which are not available through the API)
+     *
+     * @param string $url The relative URL of the page. If the full URL is http://www.youhosting.com/en/client, enter /en/client here
+     * @param array $data An optional array of GET parameters to be passed to YouHosting.
+     * @return \GuzzleHttp\Message\Response A Guzzle response object. See https://guzzle.readthedocs.org/en/5.3/http-messages.html#responses for information on how to use these.
+     */
+    public function get($url, $data = array())
+    {
+        return $this->api->get($url, $data);
+    }
+
+    /**
+     * Access custom pages on YouHosting.com (which are not available through the API)
+     *
+     * @param string $url The relative URL of the page. If the full URL is http://www.youhosting.com/en/client, enter /en/client here
+     * @param array $data An array of POST parameters to be passed to YouHosting.
+     * @return \GuzzleHttp\Message\Response A Guzzle response object. See https://guzzle.readthedocs.org/en/5.3/http-messages.html#responses for information on how to use these.
+     */
+    public function post($url, $data)
+    {
+        return $this->api->post($url, $data);
     }
 
 }

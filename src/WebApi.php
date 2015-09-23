@@ -25,12 +25,11 @@ class WebApi
 
     protected $username;
     protected $password;
-    private $cookiejar;
-
     /**
      * @var \GuzzleHttp\Client
      */
     protected $webclient;
+    private $cookiejar;
 
     /**
      * Create a new instance of the YouHosting API
@@ -81,45 +80,78 @@ class WebApi
     }
 
     /**
-     * Get the substring of $content between the first occurrence of $start until $end
+     * Get a client ID from an e-mail address
      *
-     * @param string $content
-     * @param string $start
-     * @param string $end
+     * @param $email string
      * @return string
      */
-    protected function getBetween($content, $start, $end = null)
+    public function searchClientId($email)
     {
-        $startIndex = strpos($content, $start) + strlen($start);
-        if($startIndex === false){
-            return false;
-        }
+        $response = $this->get('/en/client/manage', array(
+            'email' => $email,
+            'submit' => "Search",
+        ));
 
-        if(!$end){
-            return substr($content, $startIndex);
-        }
-
-        $length = strpos($content, $end, $startIndex);
-        if($length === false){
-            return false;
-        }
-
-        return substr($content, $startIndex, $length - $startIndex);
+        return trim($this->getBetween((string)$response->getBody(), '/en/client/view/id/', '"'));
     }
 
     /**
-     * Get the substring of $content between the last occurrence of $end until $start
+     * Send a GET request to youhosting.com
      *
-     * @param $content
-     * @param $start
-     * @param $end
-     * @return string
+     * @param string $url the relative url
+     * @param array $data any data which will be passed as query string
+     * @return Response
+     * @throws YouHostingException
      */
-    protected function getBetweenReverse($content, $start, $end)
+    public function get($url, $data = array())
     {
-        $endIndex = strrpos($content, $end);
-        $startIndex = strrpos($content, $start, -1 * (strlen($content) - $endIndex)) + strlen($start);
-        return substr($content, $startIndex, $endIndex - $startIndex);
+        if (!empty($data)) {
+            $url = $url . "?" . http_build_query($data);
+        }
+        $request = $this->webclient->createRequest('GET', $url);
+        return $this->sendRequest($request);
+    }
+
+    /**
+     * Send the request away
+     *
+     * @param Request $request
+     * @return Response
+     * @throws YouHostingException
+     */
+    private function sendRequest($request)
+    {
+        $response = $this->webclient->send($request);
+        if (!$this->isLoggedIn($response)) {
+            $this->webLogin();
+            $response = $this->webclient->send($request);
+        }
+
+        if ($response->getStatusCode() == 500) {
+            throw new YouHostingException("Unknown YouHosting Error");
+        }
+
+        return $response;
+    }
+
+    /**
+     * Check if the request failed because the user was not logged in
+     *
+     * @param ResponseInterface $response
+     * @return bool
+     */
+    private function isLoggedIn(ResponseInterface $response)
+    {
+        if ($response->getStatusCode() != 302) {
+            return true;
+        }
+
+        $location = $response->getHeader('Location');
+        if (strpos($location, "/en/auth") !== false) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -153,6 +185,72 @@ class WebApi
     }
 
     /**
+     * Get the substring of $content between the first occurrence of $start until $end
+     *
+     * @param string $content
+     * @param string $start
+     * @param string $end
+     * @return string
+     */
+    protected function getBetween($content, $start, $end = null)
+    {
+        $startIndex = strpos($content, $start) + strlen($start);
+        if ($startIndex === false) {
+            return false;
+        }
+
+        if (!$end) {
+            return substr($content, $startIndex);
+        }
+
+        $length = strpos($content, $end, $startIndex);
+        if ($length === false) {
+            return false;
+        }
+
+        return substr($content, $startIndex, $length - $startIndex);
+    }
+
+    public function searchAccountId($domain)
+    {
+        $response = $this->get('/en/client-account/manage', array(
+            'domain' => $domain,
+            'submit' => "Search",
+        ));
+
+        return trim($this->getBetween((string)$response->getBody(), '/en/client-account/edit/id/', '"'));
+    }
+
+    /**
+     * Create a new client on YouHosting
+     *
+     * @param Client $client a container for client details
+     * @param string $password
+     * @return Client
+     * @throws YouHostingException
+     */
+    public function createClient(Client $client, $password)
+    {
+        $data = $client->toArray();
+        $data['password_confirm'] = $data['password'] = $password;
+        $data['send_email'] = 0;
+        $data['submit'] = 'Save';
+
+        $response = $this->post('/en/client/add', $data);
+
+        if ($response->getStatusCode() == 200) {
+            $error = $this->getBetween((string)$response->getBody(), '<ul class="errors">', '</ul>');
+            $error = $this->getBetween($error, '<li>', '</li>');
+            throw new YouHostingException("Unable to create profile: " . $error);
+        }
+
+        $response = $this->get($response->getHeader('Location'));
+
+        $client->id = $this->getBetweenReverse((string)$response->getBody(), '/en/client/view/id/', '">' . $client->email);
+        return $client;
+    }
+
+    /**
      * Send a POST request to youhosting.com
      *
      * @param string $url the relative url
@@ -160,7 +258,7 @@ class WebApi
      * @return Response
      * @throws YouHostingException
      */
-    protected function post($url, $data)
+    public function post($url, $data)
     {
         $request = $this->webclient->createRequest('POST', $url, array(
             'body' => $data,
@@ -168,64 +266,41 @@ class WebApi
         return $this->sendRequest($request);
     }
 
-
     /**
-     * Send a GET request to youhosting.com
+     * Get the substring of $content between the last occurrence of $end until $start
      *
-     * @param string $url the relative url
-     * @param array $data any data which will be passed as query string
-     * @return Response
-     * @throws YouHostingException
+     * @param $content
+     * @param $start
+     * @param $end
+     * @return string
      */
-    protected function get($url, $data = array())
+    protected function getBetweenReverse($content, $start, $end)
     {
-        if(!empty($data)){
-            $url = $url . "?" . http_build_query($data);
-        }
-        $request = $this->webclient->createRequest('GET', $url);
-        return $this->sendRequest($request);
+        $endIndex = strrpos($content, $end);
+        $startIndex = strrpos($content, $start, -1 * (strlen($content) - $endIndex)) + strlen($start);
+        return substr($content, $startIndex, $endIndex - $startIndex);
     }
 
-    /**
-     * Send the request away
-     *
-     * @param Request $request
-     * @return Response
-     * @throws YouHostingException
-     */
-    private function sendRequest($request)
+    public function listClients($page)
     {
-        $response = $this->webclient->send($request);
-        if(!$this->isLoggedIn($response)) {
-            $this->webLogin();
-            $response = $this->webclient->send($request);
+        $response = $this->get('/en/client/index/page/' . $page);
+        $table = $this->getBetween((string)$response->getBody(), "<tbody>", '</tbody>');
+        $rows = explode("</tr>", $table);
+
+        $clients = array();
+
+        foreach ($rows as $row) {
+            $id = $this->getBetween($row, '/en/client/view/id/', '">');
+            $clients[] = $this->getClient($id);
         }
 
-        if($response->getStatusCode() == 500){
-            throw new YouHostingException("Unknown YouHosting Error");
-        }
-
-        return $response;
-    }
-
-    /**
-     * Check if the request failed because the user was not logged in
-     *
-     * @param ResponseInterface $response
-     * @return bool
-     */
-    private function isLoggedIn(ResponseInterface $response)
-    {
-        if($response->getStatusCode() != 302){
-            return true;
-        }
-
-        $location = $response->getHeader('Location');
-        if(strpos($location, "/en/auth") !== false){
-            return false;
-        }
-
-        return true;
+        return array(
+            'pages' => null,
+            'page' => $page,
+            'per_page' => count($clients),
+            'total' => null,
+            'list' => $clients
+        );
     }
 
     /**
@@ -236,9 +311,9 @@ class WebApi
      */
     public function getClient($id)
     {
-        $response = $this->get('/en/client/edit/id/'.$id);
+        $response = $this->get('/en/client/edit/id/' . $id);
 
-        $content = trim($this->getBetween((string) $response->getBody(), '<table class="wide">', "</table>"));
+        $content = trim($this->getBetween((string)$response->getBody(), '<table class="wide">', "</table>"));
 
         $client = new Client(array(
             'id' => $id,
@@ -259,146 +334,11 @@ class WebApi
         return $client;
     }
 
-    public function getAccount($id)
-    {
-        $response = $this->get('/en/client-account/edit/id/'.$id);
-
-        $content = trim($this->getBetween((string) $response, '<h2 class="head icon-4"><strong>Account Information</strong></h2>', '<div id="foot">'));
-
-        $domain = $this->getBetween($content, "http://redirect.main-hosting.com/", '</td>');
-        $domain = $this->getBetween($domain, '">', '</a>');
-
-        $type = $this->getBetween($content, '<td>Hosting type</td>', '</tr>');
-        $type = trim($this->getBetween($type, '<td>', '</td>'));
-
-        if($type == "Free"){
-            $period = "none";
-        } else {
-            $period = $this->getBetween($content, '<select name="billing_cycle" id="billing_cycle">', '</select>');
-            $period = $this->getBetweenReverse($period, 'value="', '" selected=');
-        }
-
-        return new Account(array(
-            'id' => (int)$this->getBetween($content, "<td>#", "</td>"),
-            'client_id' => (int)$this->getBetween($content, '/en/client/view/id/', '"'),
-            'plan_id' => (int)$this->getBetween($content, '/en/client-account/change-hosting-plan/id/', '#upgrade'),
-            'domain' => $domain,
-            'username' => 'u'.$this->getBetween($content, '<td>u', '</td>'),
-            'status' => $this->getBetweenReverse(
-                $this->getBetween($content, '<select name="status" id="status">', '</select>'), 'value="', '" selected="selected"'
-            ),
-            'period' => $period,
-            'created_at' => $this->getBetween(
-                $this->getBetween($content, '<td>Created At</td>', '</tr>'), '<td>', '</td>'
-            ),
-        ));
-    }
-
-    /**
-     * Get a client ID from an e-mail address
-     *
-     * @param $email string
-     * @return string
-     */
-    public function searchClientId($email)
-    {
-        $response = $this->get('/en/client/manage', array(
-            'email' => $email,
-            'submit' => "Search",
-        ));
-
-        return trim($this->getBetween((string) $response->getBody(), '/en/client/view/id/', '"'));
-    }
-
-    public function searchAccountId($domain)
-    {
-        $response = $this->get('/en/client-account/manage', array(
-            'domain' => $domain,
-            'submit' => "Search",
-        ));
-
-        return trim($this->getBetween((string) $response->getBody(), '/en/client-account/edit/id/', '"'));
-    }
-
-    /**
-     * Create a new client on YouHosting
-     *
-     * @param Client $client a container for client details
-     * @param string $password
-     * @return Client
-     * @throws YouHostingException
-     */
-    public function createClient(Client $client, $password)
-    {
-        $data = $client->toArray();
-        $data['password_confirm'] = $data['password'] = $password;
-        $data['send_email'] = 0;
-        $data['submit'] = 'Save';
-
-        $response = $this->post('/en/client/add', $data);
-
-        if($response->getStatusCode() == 200){
-            $error = $this->getBetween((string) $response->getBody(), '<ul class="errors">', '</ul>');
-            $error = $this->getBetween($error, '<li>', '</li>');
-            throw new YouHostingException("Unable to create profile: ".$error);
-        }
-
-        $response = $this->get($response->getHeader('Location'));
-
-        $client->id = $this->getBetweenReverse((string) $response->getBody(), '/en/client/view/id/', '">'.$client->email);
-        return $client;
-    }
-
-    /**
-     * Get a new captcha (SVIP API only)
-     * @return array containing a numeric id and a url to the captcha image
-     * @throws YouHostingException
-     */
-    public function getCaptcha()
-    {
-        throw new YouHostingException("Captcha verification is only supported by the REST API");
-    }
-
-    /**
-     * Verify the captcha result (SVIP API only)
-     *
-     * @param int $id the captcha id
-     * @param string $solution the solution of the captcha submitted by the user
-     * @return bool
-     * @throws YouHostingException
-     */
-    public function checkCaptcha($id, $solution)
-    {
-        throw new YouHostingException("Captcha verification is only supported by the REST API");
-    }
-
-    public function listClients($page)
-    {
-        $response = $this->get('/en/client/index/page/'.$page);
-        $table = $this->getBetween((string) $response->getBody(), "<tbody>", '</tbody>');
-        $rows = explode("</tr>", $table);
-
-        $clients = array();
-
-        foreach($rows as $row){
-            $id = $this->getBetween($row, '/en/client/view/id/', '">');
-            $clients[] = $this->getClient($id);
-        }
-
-        return array(
-            'pages' => null,
-            'page' => $page,
-            'per_page' => count($clients),
-            'total' => null,
-            'list' => $clients
-        );
-    }
-
     public function getClientLoginUrl($id)
     {
-        $response = $this->get('/en/jump-to/client-area/id/'.$id);
-        if($response->getStatusCode() != 302){
-            throw new YouHostingException("Wrong response status code, expected 302 but received ".$response->getStatusCode());
+        $response = $this->get('/en/jump-to/client-area/id/' . $id);
+        if ($response->getStatusCode() != 302) {
+            throw new YouHostingException("Wrong response status code, expected 302 but received " . $response->getStatusCode());
         }
 
         return $response->getHeader('Location');
@@ -406,7 +346,7 @@ class WebApi
 
     public function getAccountLoginUrl($id)
     {
-        $response = $this->get('/en/jump-to/client-account/id/'.$id);
+        $response = $this->get('/en/jump-to/client-account/id/' . $id);
         if($response->getStatusCode() != 302){
             throw new YouHostingException("Wrong response status code, expected 302 but received ".$response->getStatusCode());
         }
@@ -416,7 +356,7 @@ class WebApi
 
     public function checkDomain($type, $domain, $subdomain)
     {
-        if($type == 'subdomain'){
+        if ($type == 'subdomain') {
             $domain = $subdomain . "." . $domain;
         }
 
@@ -425,22 +365,22 @@ class WebApi
             'submit' => 'Search',
         ));
 
-        if(strpos($response->getBody(), "cPanel") !== false){
+        if (strpos($response->getBody(), "cPanel") !== false) {
             return true;
         } else {
-            throw new YouHostingException("Domain ".$domain." is already registered");
+            throw new YouHostingException("Domain " . $domain . " is already registered");
         }
     }
 
     public function listAccounts($page)
     {
-        $response = $this->get('/en/client-account/index/page/'.$page);
-        $table = $this->getBetween((string) $response->getBody(), "<tbody>", '</tbody>');
+        $response = $this->get('/en/client-account/index/page/' . $page);
+        $table = $this->getBetween((string)$response->getBody(), "<tbody>", '</tbody>');
         $rows = explode("</tr>", $table);
 
         $accounts = array();
 
-        foreach($rows as $row){
+        foreach ($rows as $row) {
             $id = $this->getBetween($row, '/en/client-account/edit/id/', '/page/');
             $accounts[] = $this->getAccount($id);
         }
@@ -454,9 +394,60 @@ class WebApi
         );
     }
 
+    public function getAccount($id)
+    {
+        $response = $this->get('/en/client-account/edit/id/' . $id);
+
+        $content = trim($this->getBetween((string)$response, '<h2 class="head icon-4"><strong>Account Information</strong></h2>', '<div id="foot">'));
+
+        $domain = $this->getBetween($content, "http://redirect.main-hosting.com/", '</td>');
+        $domain = $this->getBetween($domain, '">', '</a>');
+
+        $type = $this->getBetween($content, '<td>Hosting type</td>', '</tr>');
+        $type = trim($this->getBetween($type, '<td>', '</td>'));
+
+        if ($type == "Free") {
+            $period = "none";
+        } else {
+            $period = $this->getBetween($content, '<select name="billing_cycle" id="billing_cycle">', '</select>');
+            $period = $this->getBetweenReverse($period, 'value="', '" selected=');
+        }
+
+        return new Account(array(
+            'id' => (int)$this->getBetween($content, "<td>#", "</td>"),
+            'client_id' => (int)$this->getBetween($content, '/en/client/view/id/', '"'),
+            'plan_id' => (int)$this->getBetween($content, '/en/client-account/change-hosting-plan/id/', '#upgrade'),
+            'domain' => $domain,
+            'username' => 'u' . $this->getBetween($content, '<td>u', '</td>'),
+            'status' => $this->getBetweenReverse(
+                $this->getBetween($content, '<select name="status" id="status">', '</select>'), 'value="', '" selected="selected"'
+            ),
+            'period' => $period,
+            'created_at' => $this->getBetween(
+                $this->getBetween($content, '<td>Created At</td>', '</tr>'), '<td>', '</td>'
+            ),
+        ));
+    }
+
     public function suspendAccount($id, $reason, $info)
     {
         return $this->changeAccountStatus($id, 'suspended', $reason, $info);
+    }
+
+    public function changeAccountStatus($id, $status, $reason, $info)
+    {
+        $response = $this->post('/en/client-account/edit/id/' . $id, array(
+            'status' => $status,
+            'notes' => $info,
+            'reason' => $reason,
+        ));
+
+        if ($response->getStatusCode() == 302) {
+            return true;
+        }
+
+        $errorList = $this->getBetween((string)$response->getBody(), '<ul class="errors">', '</ul>');
+        throw new YouHostingException("Error while changing account status: " . $this->getBetween($errorList, '<li>', '</li>'));
     }
 
     public function unsuspendAccount($id, $reason, $info)
@@ -464,35 +455,14 @@ class WebApi
         return $this->changeAccountStatus($id, 'active', $reason, $info);
     }
 
-    public function changeAccountStatus($id, $status, $reason, $info)
-    {
-        $response = $this->post('/en/client-account/edit/id/'.$id, array(
-            'status' => $status,
-            'notes' => $info,
-            'reason' => $reason,
-        ));
-
-        if($response->getStatusCode() == 302){
-            return true;
-        }
-
-        $errorList = $this->getBetween((string) $response->getBody(), '<ul class="errors">', '</ul>');
-        throw new YouHostingException("Error while changing account status: ".$this->getBetween($errorList, '<li>', '</li>'));
-    }
-
     public function suspendClient($id, $allAccounts, $allVps, $reason, $info)
     {
         return $this->changeClientStatus($id, 'suspended', $allAccounts, $allVps, $reason, $info);
     }
 
-    public function unsuspendClient($id, $allAccounts, $allVps, $reason, $info)
-    {
-        return $this->changeClientStatus($id, 'active', $allAccounts, $allVps, $reason, $info);
-    }
-
     public function changeClientStatus($id, $status, $allAccounts, $allVps, $reason, $info)
     {
-        $response = $this->post('/en/client/change-status/id/'.$id, array(
+        $response = $this->post('/en/client/change-status/id/' . $id, array(
             'status' => $status,
             'notes' => $info,
             'reason' => $reason,
@@ -500,12 +470,17 @@ class WebApi
             'change_vps' => $allVps,
         ));
 
-        if($response->getStatusCode() == 302){
+        if ($response->getStatusCode() == 302) {
             return true;
         }
 
-        $errorList = $this->getBetween((string) $response->getBody(), '<ul class="errors">', '</ul>');
-        throw new YouHostingException("Error while changing client status: ".$this->getBetween($errorList, '<li>', '</li>'));
+        $errorList = $this->getBetween((string)$response->getBody(), '<ul class="errors">', '</ul>');
+        throw new YouHostingException("Error while changing client status: " . $this->getBetween($errorList, '<li>', '</li>'));
+    }
+
+    public function unsuspendClient($id, $allAccounts, $allVps, $reason, $info)
+    {
+        return $this->changeClientStatus($id, 'active', $allAccounts, $allVps, $reason, $info);
     }
 
     public function deleteAccount($id)
