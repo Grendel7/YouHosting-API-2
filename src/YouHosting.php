@@ -444,4 +444,15 @@ class YouHosting
         return $this->api->getBetweenReverse($content, $start, $end);
     }
 
+    /**
+     * Get a list of accounts belonging to a certain client
+     *
+     * @param Client|int|string $client An ID or email to identify the user
+     * @return array
+     * @throws YouHostingException
+     */
+    public function getClientAccounts($client)
+    {
+        return $this->api->getClientAccounts($this->getClientId($client));
+    }
 }

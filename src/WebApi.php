@@ -334,6 +334,63 @@ class WebApi
         return $client;
     }
 
+    public function getClientAccounts($id)
+    {
+        $response = $this->get('/en/client/view/id/' . $id);
+        $table = $this->getBetweenReverse(
+            $this->getBetween((string)$response->getBody(), "Account List", "</table>"),
+            "<tbody>", "</tbody>");
+
+        $rows = explode("</tr>", $table);
+
+        $accounts = array();
+        foreach ($rows as $row) {
+            $id = $this->getBetween($row, "/en/client-account/edit/id/", '"');
+
+            if (!$id) {
+                continue;
+            }
+            $accounts[] = $this->getAccount($id);
+        }
+
+        return $accounts;
+    }
+
+    public function getAccount($id)
+    {
+        $response = $this->get('/en/client-account/edit/id/' . $id);
+
+        $content = trim($this->getBetween((string)$response, '<h2 class="head icon-4"><strong>Account Information</strong></h2>', '<div id="foot">'));
+
+        $domain = $this->getBetween($content, "http://redirect.main-hosting.com/", '</td>');
+        $domain = $this->getBetween($domain, '">', '</a>');
+
+        $type = $this->getBetween($content, '<td>Hosting type</td>', '</tr>');
+        $type = trim($this->getBetween($type, '<td>', '</td>'));
+
+        if ($type == "Free") {
+            $period = "none";
+        } else {
+            $period = $this->getBetween($content, '<select name="billing_cycle" id="billing_cycle">', '</select>');
+            $period = $this->getBetweenReverse($period, 'value="', '" selected=');
+        }
+
+        return new Account(array(
+            'id' => (int)$this->getBetween($content, "<td>#", "</td>"),
+            'client_id' => (int)$this->getBetween($content, '/en/client/view/id/', '"'),
+            'plan_id' => (int)$this->getBetween($content, '/en/client-account/change-hosting-plan/id/', '#upgrade'),
+            'domain' => $domain,
+            'username' => 'u' . $this->getBetween($content, '<td>u', '</td>'),
+            'status' => $this->getBetweenReverse(
+                $this->getBetween($content, '<select name="status" id="status">', '</select>'), 'value="', '" selected="selected"'
+            ),
+            'period' => $period,
+            'created_at' => $this->getBetween(
+                $this->getBetween($content, '<td>Created At</td>', '</tr>'), '<td>', '</td>'
+            ),
+        ));
+    }
+
     public function getClientLoginUrl($id)
     {
         $response = $this->get('/en/jump-to/client-area/id/' . $id);
@@ -392,41 +449,6 @@ class WebApi
             'total' => null,
             'list' => $accounts
         );
-    }
-
-    public function getAccount($id)
-    {
-        $response = $this->get('/en/client-account/edit/id/' . $id);
-
-        $content = trim($this->getBetween((string)$response, '<h2 class="head icon-4"><strong>Account Information</strong></h2>', '<div id="foot">'));
-
-        $domain = $this->getBetween($content, "http://redirect.main-hosting.com/", '</td>');
-        $domain = $this->getBetween($domain, '">', '</a>');
-
-        $type = $this->getBetween($content, '<td>Hosting type</td>', '</tr>');
-        $type = trim($this->getBetween($type, '<td>', '</td>'));
-
-        if ($type == "Free") {
-            $period = "none";
-        } else {
-            $period = $this->getBetween($content, '<select name="billing_cycle" id="billing_cycle">', '</select>');
-            $period = $this->getBetweenReverse($period, 'value="', '" selected=');
-        }
-
-        return new Account(array(
-            'id' => (int)$this->getBetween($content, "<td>#", "</td>"),
-            'client_id' => (int)$this->getBetween($content, '/en/client/view/id/', '"'),
-            'plan_id' => (int)$this->getBetween($content, '/en/client-account/change-hosting-plan/id/', '#upgrade'),
-            'domain' => $domain,
-            'username' => 'u' . $this->getBetween($content, '<td>u', '</td>'),
-            'status' => $this->getBetweenReverse(
-                $this->getBetween($content, '<select name="status" id="status">', '</select>'), 'value="', '" selected="selected"'
-            ),
-            'period' => $period,
-            'created_at' => $this->getBetween(
-                $this->getBetween($content, '<td>Created At</td>', '</tr>'), '<td>', '</td>'
-            ),
-        ));
     }
 
     public function suspendAccount($id, $reason, $info)

@@ -146,6 +146,30 @@ class RestApi extends WebApi
         return $result;
     }
 
+    public function getClientAccounts($id)
+    {
+        $result = $this->apiGet("/v1/account/list", array(
+            'page' => 1,
+            'per_page' => 100,
+            'client_id' => $id
+        ));
+
+        return array_map(function ($value) {
+            return new Account($value);
+        }, $result['list']);
+    }
+
+    public function searchClientId($email)
+    {
+        $result = $this->apiGet("/v1/client/list", array(
+            'page' => 1,
+            'per_page' => 100,
+            'email' => $email
+        ));
+
+        return array_shift($result['list'])['id'];
+    }
+
     public function suspendAccount($id, $reason, $info)
     {
         return $this->apiPost("/v1/account/" . $id . "/suspend", array(
