@@ -1,4 +1,7 @@
 # YouHosting API v2
+
+**Archive notice: with YouHosting being shut down, this tool is no longer being maintained.**
+
 YouHosting API v2 is an effort to combine the features of the YouHosting SVIP library "[libyouhosting](https://github.com/i7Grendel/libyouhosting)" and the older [cURL API](https://bitbucket.org/grendelhosting/youhosting-api) into one unified API. This allows SVIP resellers to use all the advantages of their API while bringing (largely) the same functionality to all resellers by crawling the YouHosting website.
 
 ## How do I use this API in my software?
